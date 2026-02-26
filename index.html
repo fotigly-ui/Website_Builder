@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebForge — AI Website Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-1: #f2f0f7; --bg-2: #ffffff; --bg-3: #e9e7f0; --bg-4: #dddbe6;
+            --border: #d4d1e0; --text-1: #1a1730; --text-2: #6d6985; --text-3: #9b97b0;
+            --accent: #6d4aff; --accent-h: #5a35e8; --accent-l: rgba(109,74,255,0.08);
+            --accent-g: rgba(109,74,255,0.25); --teal: #06b6d4; --teal-l: rgba(6,182,212,0.08);
+            --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+            --radius: 12px; --radius-s: 8px;
+            --shadow-s: 0 1px 3px rgba(0,0,0,0.05); --shadow-m: 0 4px 16px rgba(0,0,0,0.08);
+            --ease: 0.2s ease; --sidebar: 350px; --header: 54px; --toolbar: 46px;
+            --font: 'Bricolage Grotesque', system-ui, sans-serif;
+            --mono: 'Fira Code', 'Consolas', monospace;
+        }
+        html.dark {
+            --bg-1: #0c0b14; --bg-2: #141322; --bg-3: #1e1c30; --bg-4: #252340;
+            --border: #2d2a44; --text-1: #ebe8f5; --text-2: #8985a3; --text-3: #5c587a;
+            --accent: #8b7aff; --accent-h: #9e90ff; --accent-l: rgba(139,122,255,0.1);
+            --accent-g: rgba(139,122,255,0.3); --teal-l: rgba(6,182,212,0.1);
+            --shadow-s: 0 1px 3px rgba(0,0,0,0.2); --shadow-m: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: var(--font); background: var(--bg-1); color: var(--text-1);
+            line-height: 1.5; -webkit-font-smoothing: antialiased;
+        }
+        #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+        /* ── Header ── */
+        .app-header {
+            display: flex; align-items: center; justify-content: space-between;
+            height: var(--header); padding: 0 18px; background: var(--bg-2);
+            border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 10;
+        }
+        .logo { display: flex; align-items: center; gap: 9px; }
+        .logo-icon {
+            font-size: 20px; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--teal));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+        .header-actions { display: flex; gap: 6px; align-items: center; }
+
+        /* ── Buttons ── */
+        .icon-btn {
+            display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px;
+            background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border);
+            border-radius: var(--radius-s); font-family: var(--font); font-size: 12.5px;
+            font-weight: 500; cursor: pointer; transition: all var(--ease); white-space: nowrap;
+        }
+        .icon-btn:hover { background: var(--accent-l); color: var(--accent); border-color: var(--accent); }
+        .icon-btn.sm { padding: 5px 9px; font-size: 12px; }
+        .icon-btn .btn-label { display: inline; }
+        .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+        /* ── Main Layout ── */
+        .app-main { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .app-main.fullscreen .create-panel { display: none; }
+
+        /* ── Create Panel ── */
+        .create-panel {
+            width: var(--sidebar); display: flex; flex-direction: column;
+            background: var(--bg-2); border-right: 1px solid var(--border); flex-shrink: 0;
+            transition: width 0.3s ease;
+        }
+        .panel-scroll { flex: 1; overflow-y: auto; padding: 22px; }
+        .panel-scroll::-webkit-scrollbar { width: 5px; }
+        .panel-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .welcome-hdr { margin-bottom: 22px; }
+        .welcome-hdr h2 {
+            font-size: 24px; font-weight: 800; line-height: 1.15;
+            letter-spacing: -0.5px; margin-bottom: 6px;
+        }
+        .grad-text {
+            background: linear-gradient(135deg, var(--accent), var(--teal));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .welcome-hdr p { color: var(--text-2); font-size: 13.5px; }
+
+        /* ── Templates ── */
+        .tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+        .tpl-card {
+            position: relative; overflow: hidden;
+            background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--radius-s);
+            padding: 14px; cursor: pointer; transition: all var(--ease); text-align: left;
+            font-family: var(--font); color: var(--text-1);
+        }
+        .tpl-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--tpl-accent, var(--accent)); opacity: 0; transition: opacity var(--ease);
+        }
+        .tpl-card:hover {
+            border-color: var(--accent); background: var(--accent-l);
+            transform: translateY(-2px); box-shadow: var(--shadow-m);
+        }
+        .tpl-card:hover::before { opacity: 1; }
+        .tpl-card .tpl-icon { font-size: 18px; margin-bottom: 7px; }
+        .tpl-card .tpl-name { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
+        .tpl-card .tpl-desc { font-size: 11px; color: var(--text-2); line-height: 1.3; }
+
+        /* ── History Section ── */
+        .new-btn {
+            display: flex; align-items: center; gap: 6px; width: 100%; padding: 10px;
+            background: var(--accent-l); color: var(--accent); border: 1px dashed var(--accent);
+            border-radius: var(--radius-s); font-family: var(--font); font-size: 13px;
+            font-weight: 600; cursor: pointer; margin-bottom: 14px; transition: all var(--ease);
+        }
+        .new-btn:hover { background: var(--accent); color: #fff; }
+        .version-label {
+            font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 8px;
+        }
+        .history-item {
+            display: flex; gap: 10px; align-items: flex-start; padding: 10px 8px;
+            border-radius: var(--radius-s); font-size: 12.5px; color: var(--text-2);
+            cursor: pointer; transition: all var(--ease); border: 1px solid transparent;
+        }
+        .history-item:hover { background: var(--bg-3); border-color: var(--border); }
+        .history-item.active-ver { background: var(--accent-l); border-color: var(--accent); color: var(--text-1); }
+        .history-num {
+            flex-shrink: 0; width: 22px; height: 22px; display: flex; align-items: center;
+            justify-content: center; background: var(--accent-l); color: var(--accent);
+            border-radius: 50%; font-size: 11px; font-weight: 700;
+        }
+        .history-text { line-height: 1.4; word-break: break-word; }
+
+        /* ── Input Area ── */
+        .input-area {
+            padding: 14px 18px; border-top: 1px solid var(--border); background: var(--bg-2);
+        }
+        .input-wrap { display: flex; flex-direction: column; gap: 9px; }
+        #promptInput {
+            width: 100%; padding: 11px 13px; border: 1px solid var(--border);
+            border-radius: var(--radius-s); background: var(--bg-1); color: var(--text-1);
+            font-family: var(--font); font-size: 16px; line-height: 1.5;
+            resize: vertical; min-height: 68px; max-height: 200px; transition: border-color var(--ease);
+        }
+        #promptInput:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-l); }
+        #promptInput::placeholder { color: var(--text-3); }
+        .gen-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 11px 18px; background: var(--accent); color: #fff; border: none;
+            border-radius: var(--radius-s); font-family: var(--font); font-size: 14.5px;
+            font-weight: 600; cursor: pointer; transition: all var(--ease);
+        }
+        .gen-btn:hover:not(:disabled) { background: var(--accent-h); box-shadow: 0 4px 18px var(--accent-g); }
+        .gen-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .shortcut-hint { text-align: center; font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+        /* ── Preview Panel ── */
+        .preview-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .preview-toolbar {
+            display: none; align-items: center; justify-content: space-between;
+            height: var(--toolbar); padding: 0 12px; background: var(--bg-2);
+            border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 8px;
+        }
+        .preview-toolbar.visible { display: flex; }
+        .toolbar-l, .toolbar-r { display: flex; align-items: center; gap: 6px; }
+        .toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 2px; }
+
+        .view-tog { display: flex; background: var(--bg-3); border-radius: 6px; padding: 2px; }
+        .view-tog .vt-btn {
+            padding: 5px 11px; border: none; background: transparent; color: var(--text-2);
+            font-family: var(--font); font-size: 12px; font-weight: 500; border-radius: 5px;
+            cursor: pointer; transition: all var(--ease); display: flex; align-items: center; gap: 5px;
+        }
+        .view-tog .vt-btn.active { background: var(--bg-2); color: var(--text-1); box-shadow: var(--shadow-s); }
+
+        /* ── Generating indicator ── */
+        .gen-indicator {
+            display: none; align-items: center; gap: 6px;
+            font-size: 11.5px; color: var(--accent); font-weight: 600;
+        }
+        .gen-indicator.visible { display: flex; }
+        .pulse-dot {
+            width: 7px; height: 7px; background: var(--accent);
+            border-radius: 50%; animation: pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100% { opacity: 0.3; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1); } }
+
+        .dev-tog { display: flex; gap: 2px; }
+        .dev-tog .dt-btn {
+            width: 30px; height: 28px; display: flex; align-items: center; justify-content: center;
+            border: 1px solid transparent; background: transparent; color: var(--text-3);
+            border-radius: 5px; cursor: pointer; transition: all var(--ease); font-size: 12.5px;
+        }
+        .dev-tog .dt-btn.active { color: var(--accent); background: var(--accent-l); border-color: var(--accent); }
+        .dev-tog .dt-btn:hover:not(.active) { color: var(--text-2); }
+
+        /* ── Preview Content ── */
+        .preview-content {
+            flex: 1; overflow: hidden; position: relative;
+            background: var(--bg-1);
+            background-image: radial-gradient(circle at 20% 50%, var(--accent-l) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 80%, var(--teal-l) 0%, transparent 50%);
+        }
+        .state-view {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; padding: 30px; text-align: center; gap: 14px;
+        }
+        .state-view.active { display: flex; }
+        .state-view h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+        .state-view p { font-size: 13.5px; color: var(--text-2); max-width: 320px; }
+
+        /* ── Empty State ── */
+        .orbit-wrap {
+            position: relative; width: 110px; height: 110px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 6px;
+        }
+        .orbit-wrap > .fa-globe { font-size: 36px; color: var(--accent); z-index: 1; }
+        .orbit-ring {
+            position: absolute; inset: 0; border: 1.5px solid var(--accent-l); border-radius: 50%;
+            animation: orbit 8s linear infinite;
+        }
+        .orbit-ring::after {
+            content: ''; position: absolute; top: -3px; left: 50%;
+            width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
+        }
+        .orbit-ring:nth-child(2) { inset: 12px; animation-duration: 6s; animation-delay: -2s; }
+        .orbit-ring:nth-child(3) { inset: 24px; animation-duration: 10s; animation-delay: -5s; }
+        @keyframes orbit { to { transform: rotate(360deg); } }
+
+        /* ── Loading State ── */
+        .loading-anim { display: flex; flex-direction: column; gap: 8px; width: 180px; margin-bottom: 10px; }
+        .code-ln {
+            height: 7px; border-radius: 4px; background: var(--accent);
+            animation: shimmer 1.6s ease-in-out infinite;
+        }
+        .code-ln:nth-child(2) { width: 55%; animation-delay: 0.15s; }
+        .code-ln:nth-child(3) { width: 80%; animation-delay: 0.3s; }
+        .code-ln:nth-child(4) { width: 65%; animation-delay: 0.45s; }
+        .code-ln:nth-child(5) { width: 45%; animation-delay: 0.6s; }
+        @keyframes shimmer { 0%,100% { opacity: 0.15; } 50% { opacity: 0.6; } }
+        .loading-hint {
+            font-size: 11.5px; color: var(--text-3); margin-top: 4px; cursor: pointer;
+            text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
+        }
+        .loading-hint:hover { color: var(--accent); }
+
+        /* ── Error State ── */
+        .err-icon { font-size: 36px; color: var(--error); margin-bottom: 4px; }
+        .retry-btn {
+            margin-top: 4px; padding: 8px 18px; background: var(--accent); color: #fff;
+            border: none; border-radius: var(--radius-s); font-family: var(--font);
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--ease);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .retry-btn:hover { background: var(--accent-h); }
+
+        /* ── Device Frame ── */
+        .device-frame {
+            width: 100%; height: 100%; margin: 0 auto; transition: all 0.35s ease;
+            position: relative;
+        }
+        .device-frame.tablet {
+            max-width: 768px;
+            border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+        }
+        .device-frame.mobile {
+            max-width: 375px;
+            border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+        }
+        #previewFrame { width: 100%; height: 100%; border: none; background: #fff; }
+
+        /* ── Code View ── */
+        #codeContainer { display: none; height: 100%; position: relative; }
+        .code-scroll {
+            height: 100%; overflow: auto; background: #282c34;
+        }
+        .code-scroll::-webkit-scrollbar { width: 6px; }
+        .code-scroll::-webkit-scrollbar-thumb { background: #3e4451; border-radius: 3px; }
+        .code-scroll pre {
+            margin: 0; padding: 18px; min-height: 100%; font-size: 13px; line-height: 1.65;
+        }
+        .code-scroll code { font-family: var(--mono); white-space: pre-wrap; word-break: break-all; }
+
+        /* ── Code Editor ── */
+        #codeEditor {
+            display: none; width: 100%; height: 100%; background: #282c34; color: #abb2bf;
+            font-family: var(--mono); font-size: 13px; line-height: 1.65;
+            padding: 18px; border: none; resize: none; outline: none;
+            white-space: pre-wrap; word-break: break-all;
+        }
+        .code-bar {
+            display: none; position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 8px 14px; background: rgba(40,44,52,0.95); border-top: 1px solid #3e4451;
+            backdrop-filter: blur(8px); z-index: 5;
+        }
+        .code-bar.visible { display: flex; align-items: center; justify-content: space-between; }
+        .code-bar-info { font-size: 12px; color: #6b7280; font-family: var(--mono); }
+        .apply-btn {
+            padding: 6px 16px; background: var(--success); color: #fff; border: none;
+            border-radius: 6px; font-family: var(--font); font-size: 12.5px;
+            font-weight: 600; cursor: pointer; transition: all var(--ease);
+        }
+        .apply-btn:hover { filter: brightness(1.1); }
+
+        /* ── Streaming overlay text ── */
+        .stream-badge {
+            position: absolute; top: 10px; right: 10px; padding: 4px 10px;
+            background: var(--accent); color: #fff; border-radius: 4px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.5px; z-index: 5;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        /* ── Preview container ── */
+        #previewContainer { display: none; height: 100%; }
+
+        /* ── Toast ── */
+        #toastContainer {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; display: flex; flex-direction: column; gap: 8px; align-items: center;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 10px 22px; border-radius: 8px; font-family: var(--font);
+            font-size: 13px; font-weight: 500; color: #fff; opacity: 0;
+            transform: translateY(16px); transition: all 0.3s ease; pointer-events: auto;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        .toast.visible { opacity: 1; transform: translateY(0); }
+        .toast-success { background: var(--success); }
+        .toast-error { background: var(--error); }
+
+        /* ── Mobile Tabs ── */
+        .mobile-tabs {
+            display: none; background: var(--bg-2); border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .mobile-tabs .m-tab {
+            flex: 1; padding: 10px; border: none; background: transparent;
+            color: var(--text-3); font-family: var(--font); font-size: 13px;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 6px; border-bottom: 2px solid transparent;
+            transition: all var(--ease);
+        }
+        .mobile-tabs .m-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .mobile-tabs { display: flex; }
+            .app-main { flex-direction: column; }
+            .create-panel { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+            .create-panel.hidden, .preview-panel.hidden { display: none; }
+            .preview-panel { min-height: 0; }
+            .icon-btn .btn-label { display: none; }
+            .tpl-grid { grid-template-columns: 1fr; }
+            .dev-tog { display: none; }
+            .welcome-hdr h2 { font-size: 20px; }
+            .shortcut-hint { display: none; }
+        }
+
+        /* ── Fade-in animation ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.5s ease forwards; }
+        .fade-up-d1 { animation-delay: 0.06s; opacity: 0; }
+        .fade-up-d2 { animation-delay: 0.12s; opacity: 0; }
+        .fade-up-d3 { animation-delay: 0.18s; opacity: 0; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <nav class="mobile-tabs" id="mobileTabs">
+            <button class="m-tab active" data-tab="create"><i class="fas fa-wand-magic-sparkles"></i> Create</button>
+            <button class="m-tab" data-tab="preview"><i class="fas fa-eye"></i> Preview</button>
+        </nav>
+
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">&#10022;</span>
+                <span class="logo-text">WebForge</span>
+            </div>
+            <div class="header-actions">
+                <button id="undoBtn" class="icon-btn sm" title="Undo to previous version" style="display:none">
+                    <i class="fas fa-rotate-left"></i><span class="btn-label">Undo</span>
+                </button>
+                <button id="downloadBtn" class="icon-btn" title="Download HTML" style="display:none">
+                    <i class="fas fa-download"></i><span class="btn-label">Download</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="app-main" id="appMain">
+            <aside class="create-panel" id="createPanel">
+                <div class="panel-scroll" id="panelScroll">
+                    <div id="welcomeSection" class="fade-up">
+                        <div class="welcome-hdr">
+                            <h2>Build something<br><span class="grad-text">extraordinary</span></h2>
+                            <p>Describe your vision or pick a template to get started</p>
+                        </div>
+                        <div class="tpl-grid" id="tplGrid"></div>
+                    </div>
+                    <div id="historySection" style="display:none">
+                        <button id="newBtn" class="new-btn"><i class="fas fa-plus"></i> New Website</button>
+                        <div class="version-label">Version History</div>
+                        <div id="historyList"></div>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <div class="input-wrap">
+                        <textarea id="promptInput" placeholder="Describe your website..." rows="3"></textarea>
+                        <button id="genBtn" class="gen-btn">
+                            <i class="fas fa-bolt" id="genBtnIcon"></i><span id="genBtnText">Generate</span>
+                        </button>
+                    </div>
+                    <div class="shortcut-hint">&#8984;/Ctrl + Enter</div>
+                </div>
+            </aside>
+
+            <section class="preview-panel" id="previewPanel">
+                <div class="preview-toolbar" id="previewToolbar">
+                    <div class="toolbar-l">
+                        <div class="view-tog" id="viewToggle">
+                            <button class="vt-btn active" data-view="preview"><i class="fas fa-eye"></i> Preview</button>
+                            <button class="vt-btn" data-view="code"><i class="fas fa-code"></i> Code</button>
+                        </div>
+                        <span class="gen-indicator" id="genIndicator">
+                            <span class="pulse-dot"></span> Generating
+                        </span>
+                    </div>
+                    <div class="toolbar-r">
+                        <div class="dev-tog" id="deviceToggle">
+                            <button class="dt-btn active" data-device="desktop" title="Desktop"><i class="fas fa-desktop"></i></button>
+                            <button class="dt-btn" data-device="tablet" title="Tablet"><i class="fas fa-tablet-screen-button"></i></button>
+                            <button class="dt-btn" data-device="mobile" title="Mobile"><i class="fas fa-mobile-screen-button"></i></button>
+                        </div>
+                        <div class="toolbar-sep"></div>
+                        <button id="editBtn" class="icon-btn sm" title="Edit code" style="display:none">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button id="fullscreenBtn" class="icon-btn sm" title="Toggle fullscreen">
+                            <i class="fas fa-expand" id="fsIcon"></i>
+                        </button>
+                        <button id="copyBtn" class="icon-btn sm" title="Copy code"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="preview-content" id="previewContent">
+                    <div id="emptyState" class="state-view active">
+                        <div class="orbit-wrap">
+                            <div class="orbit-ring"></div>
+                            <div class="orbit-ring"></div>
+                            <div class="orbit-ring"></div>
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <h3>Your website will appear here</h3>
+                        <p>Describe what you want or select a template to begin</p>
+                    </div>
+                    <div id="loadingState" class="state-view">
+                        <div class="loading-anim">
+                            <div class="code-ln"></div><div class="code-ln"></div>
+                            <div class="code-ln"></div><div class="code-ln"></div>
+                            <div class="code-ln"></div>
+                        </div>
+                        <h3>Crafting your website</h3>
+                        <p id="loadingStatus">Generating code...</p>
+                        <span class="loading-hint" id="viewCodeHint">Watch code being written &rarr;</span>
+                    </div>
+                    <div id="errorState" class="state-view">
+                        <i class="fas fa-exclamation-triangle err-icon"></i>
+                        <h3>Something went wrong</h3>
+                        <p id="errorMsg">An unexpected error occurred.</p>
+                        <button id="retryBtn" class="retry-btn"><i class="fas fa-redo"></i> Try Again</button>
+                    </div>
+                    <div id="previewContainer">
+                        <div class="device-frame" id="deviceFrame">
+                            <iframe id="previewFrame" sandbox="allow-scripts"></iframe>
+                        </div>
+                    </div>
+                    <div id="codeContainer">
+                        <span class="stream-badge" id="streamBadge" style="display:none">STREAMING</span>
+                        <div class="code-scroll" id="codeScroll">
+                            <pre><code id="codeContent" class="language-html"></code></pre>
+                        </div>
+                        <textarea id="codeEditor"></textarea>
+                        <div class="code-bar" id="codeBar">
+                            <span class="code-bar-info" id="codeBarInfo">Editing</span>
+                            <button class="apply-btn" id="applyBtn">Apply Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        /* ── State ── */
+        var state = {
+            code: '', raw: '', generating: false, view: 'preview',
+            device: 'desktop', mobileTab: 'create', generated: false,
+            lastPrompt: '', versions: [], editing: false, fullscreen: false
+        };
+
+        /* ── Helpers ── */
+        var $ = function(id) { return document.getElementById(id); };
+        function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        /* ── Template colors ── */
+        var tplColors = ['#6d4aff', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+
+        /* ── Templates ── */
+        var templates = [
+            { icon: 'fa-rocket', name: 'SaaS Landing', desc: 'Modern product page',
+              prompt: 'Create a modern SaaS landing page for a project management tool called "FlowBoard". Include: a bold hero section with headline, subheadline and CTA buttons, a features section with 6 feature cards with icons, a pricing section with 3 tiers (Free, Pro, Enterprise), a testimonials section with 3 customer quotes, and a footer with links. Use a clean, professional design with a blue and white color scheme. Make it visually impressive with subtle animations.' },
+            { icon: 'fa-palette', name: 'Portfolio', desc: 'Creative showcase',
+              prompt: 'Create a creative portfolio website for a UI/UX designer named "Alex Rivera". Include: a hero with bold introduction and animated text, a projects gallery with 6 project cards with hover effects, an about section with skills progress bars, a services section, and a contact section with a form. Use a dark theme with vibrant accent colors and smooth scroll animations.' },
+            { icon: 'fa-utensils', name: 'Restaurant', desc: 'Elegant dining',
+              prompt: 'Create an elegant restaurant website for "La Maison", an upscale French bistro. Include: a full-width hero with reservation CTA, a menu section organized by courses (Starters, Mains, Desserts) with prices, a photo gallery section, an "Our Story" section, chef spotlight, hours and location info, and a footer. Use warm, sophisticated colors (cream, gold, dark brown) with beautiful serif typography.' },
+            { icon: 'fa-newspaper', name: 'Blog', desc: 'Minimal content platform',
+              prompt: 'Create a minimal, modern blog website called "The Quiet Observer". Include: a header with navigation, a featured article hero with large image placeholder, a grid of 6 article cards with thumbnails and metadata (date, read time, category), a sidebar with categories and newsletter signup, and a footer. Use clean typography with lots of whitespace and a light, airy design with serif fonts for article titles.' },
+            { icon: 'fa-store', name: 'E-Commerce', desc: 'Product showcase',
+              prompt: 'Create a stylish e-commerce product showcase for a premium audio brand called "SonicWave". Include: a hero featuring the flagship product, a product grid with 8 items showing images, names, prices and star ratings, a single product detail section with description, specs and add-to-cart button, a customer reviews section, and a footer. Use a sleek, modern design with dark backgrounds and vibrant accent colors.' },
+            { icon: 'fa-chart-line', name: 'Dashboard', desc: 'Analytics UI',
+              prompt: 'Create a modern analytics dashboard for a social media platform called "Pulse". Include: a sidebar navigation with icons, a header with search and user avatar, stat cards showing key metrics (followers, engagement, reach, growth), chart placeholder areas (line chart, bar chart, pie chart using simple CSS), a recent activity feed, and a data table. Use a clean, professional dark theme with blue accent colors.' }
+        ];
+
+        /* ── Dark Mode ── */
+        function detectDarkMode() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                document.documentElement.classList.toggle('dark', e.matches);
+            });
+        }
+
+        /* ── Render Templates ── */
+        function renderTemplates() {
+            var grid = $('tplGrid');
+            grid.innerHTML = templates.map(function(t, i) {
+                return '<button class="tpl-card fade-up-d' + Math.min(i % 3 + 1, 3) +
+                    '" data-idx="' + i + '" style="--tpl-accent:' + tplColors[i] + '">' +
+                    '<div class="tpl-icon" style="color:' + tplColors[i] + '"><i class="fas ' + t.icon + '"></i></div>' +
+                    '<div class="tpl-name">' + t.name + '</div>' +
+                    '<div class="tpl-desc">' + t.desc + '</div>' +
+                    '</button>';
+            }).join('');
+
+            grid.addEventListener('click', function(e) {
+                var card = e.target.closest('.tpl-card');
+                if (!card) return;
+                var idx = parseInt(card.dataset.idx, 10);
+                $('promptInput').value = templates[idx].prompt;
+                $('promptInput').focus();
+            });
+        }
+
+        /* ── Show App State ── */
+        function showAppState(name) {
+            ['emptyState', 'loadingState', 'errorState', 'previewContainer', 'codeContainer'].forEach(function(id) {
+                var el = $(id);
+                if (el.classList.contains('state-view')) { el.classList.remove('active'); }
+                else { el.style.display = 'none'; }
+            });
+
+            var showToolbar = (name === 'result') || (name === 'loading' && state.view === 'code');
+            $('previewToolbar').classList.toggle('visible', showToolbar);
+
+            if (name === 'empty') { $('emptyState').classList.add('active'); }
+            else if (name === 'loading') {
+                if (state.view === 'code') {
+                    $('codeContainer').style.display = 'block';
+                    $('streamBadge').style.display = 'inline-block';
+                } else {
+                    $('loadingState').classList.add('active');
+                }
+            }
+            else if (name === 'error') { $('errorState').classList.add('active'); }
+            else if (name === 'result') {
+                $('streamBadge').style.display = 'none';
+                if (state.view === 'preview') { $('previewContainer').style.display = 'block'; }
+                else { $('codeContainer').style.display = 'block'; }
+            }
+
+            updateToolbarButtons();
+        }
+
+        /* ── Toolbar button visibility ── */
+        function updateToolbarButtons() {
+            var showEdit = state.generated && state.view === 'code' && !state.generating;
+            $('editBtn').style.display = showEdit ? 'inline-flex' : 'none';
+            $('genIndicator').classList.toggle('visible', state.generating);
+        }
+
+        /* ── View Toggle ── */
+        function setView(v) {
+            state.view = v;
+            if (state.editing) { exitEditMode(false); }
+            document.querySelectorAll('#viewToggle .vt-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.view === v);
+            });
+
+            if (state.generating) {
+                showAppState('loading');
+            } else if (state.generated) {
+                showAppState('result');
+            }
+        }
+
+        /* ── Device Toggle ── */
+        function setDevice(d) {
+            state.device = d;
+            var f = $('deviceFrame');
+            f.className = 'device-frame';
+            if (d !== 'desktop') { f.classList.add(d); }
+            document.querySelectorAll('#deviceToggle .dt-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.device === d);
+            });
+        }
+
+        /* ── Fullscreen Toggle ── */
+        function toggleFullscreen() {
+            state.fullscreen = !state.fullscreen;
+            $('appMain').classList.toggle('fullscreen', state.fullscreen);
+            $('fsIcon').className = state.fullscreen ? 'fas fa-compress' : 'fas fa-expand';
+        }
+
+        /* ── Edit Mode ── */
+        function enterEditMode() {
+            state.editing = true;
+            $('codeScroll').style.display = 'none';
+            $('codeEditor').style.display = 'block';
+            $('codeEditor').value = state.code;
+            $('codeBar').classList.add('visible');
+            $('editBtn').style.display = 'none';
+            updateEditInfo();
+        }
+
+        function exitEditMode(apply) {
+            if (apply) {
+                var newCode = $('codeEditor').value;
+                if (newCode !== state.code) {
+                    state.versions.push({ code: state.code, prompt: '(manual edit)' });
+                    state.code = newCode;
+                    renderPreview(state.code);
+                    highlightCode(state.code);
+                    renderHistory();
+                    showToast('Changes applied!');
+                }
+            }
+            state.editing = false;
+            $('codeScroll').style.display = 'block';
+            $('codeEditor').style.display = 'none';
+            $('codeBar').classList.remove('visible');
+            updateToolbarButtons();
+        }
+
+        function updateEditInfo() {
+            var lines = $('codeEditor').value.split('\n').length;
+            $('codeBarInfo').textContent = lines + ' lines';
+        }
+
+        /* ── Mobile Tabs ── */
+        function switchMobileTab(tab) {
+            state.mobileTab = tab;
+            document.querySelectorAll('#mobileTabs .m-tab').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.tab === tab);
+            });
+            if (window.innerWidth <= 768) {
+                $('createPanel').classList.toggle('hidden', tab !== 'create');
+                $('previewPanel').classList.toggle('hidden', tab !== 'preview');
+            }
+        }
+
+        /* ── Extract HTML ── */
+        function extractHTML(text) {
+            var m = text.match(/```(?:html)?\s*\n?([\s\S]*?)```/);
+            if (m) {
+                var inner = m[1].trim();
+                if (inner.indexOf('<!DOCTYPE') !== -1 || inner.indexOf('<html') !== -1) return inner;
+            }
+            var di = text.indexOf('<!DOCTYPE');
+            if (di !== -1) {
+                var ei = text.lastIndexOf('</html>');
+                return ei !== -1 ? text.substring(di, ei + 7) : text.substring(di);
+            }
+            var hi = text.indexOf('<html');
+            if (hi !== -1) {
+                var ei2 = text.lastIndexOf('</html>');
+                return ei2 !== -1 ? text.substring(hi, ei2 + 7) : text.substring(hi);
+            }
+            return text;
+        }
+
+        /* ── Render Preview ── */
+        function renderPreview(html) { $('previewFrame').srcdoc = html; }
+
+        /* ── Highlight code ── */
+        function highlightCode(code) {
+            var el = $('codeContent');
+            el.textContent = code;
+            el.removeAttribute('data-highlighted');
+            if (typeof hljs !== 'undefined') { hljs.highlightElement(el); }
+        }
+
+        /* ── History / Versions ── */
+        function renderHistory() {
+            var all = state.versions.concat([{ code: state.code, prompt: state.lastPrompt }]);
+            $('historyList').innerHTML = all.map(function(v, i) {
+                var short = v.prompt.length > 100 ? v.prompt.substring(0, 100) + '...' : v.prompt;
+                var isActive = i === all.length - 1;
+                return '<div class="history-item' + (isActive ? ' active-ver' : '') + '" data-ver="' + i + '">' +
+                    '<span class="history-num">' + (i + 1) + '</span>' +
+                    '<span class="history-text">' + esc(short) + '</span></div>';
+            }).join('');
+        }
+
+        function restoreVersion(idx) {
+            var all = state.versions.concat([{ code: state.code, prompt: state.lastPrompt }]);
+            if (idx < 0 || idx >= all.length) return;
+            var target = all[idx];
+
+            // Rebuild versions up to the selected index
+            state.versions = all.slice(0, idx);
+            state.code = target.code;
+            state.lastPrompt = target.prompt;
+
+            renderPreview(state.code);
+            highlightCode(state.code);
+            renderHistory();
+            setView('preview');
+            showAppState('result');
+            updateUndoBtn();
+            showToast('Restored version ' + (idx + 1));
+        }
+
+        function undoVersion() {
+            if (state.versions.length === 0) return;
+            var prev = state.versions.pop();
+            state.code = prev.code;
+            state.lastPrompt = prev.prompt;
+            renderPreview(state.code);
+            highlightCode(state.code);
+            renderHistory();
+            updateUndoBtn();
+            showToast('Reverted to previous version');
+        }
+
+        function updateUndoBtn() {
+            $('undoBtn').style.display = state.versions.length > 0 ? 'inline-flex' : 'none';
+        }
+
+        /* ── Toast ── */
+        function showToast(message, type) {
+            type = type || 'success';
+            var t = document.createElement('div');
+            t.className = 'toast toast-' + type;
+            t.textContent = message;
+            $('toastContainer').appendChild(t);
+            requestAnimationFrame(function() { t.classList.add('visible'); });
+            setTimeout(function() {
+                t.classList.remove('visible');
+                setTimeout(function() { t.remove(); }, 300);
+            }, 3000);
+        }
+
+        /* ── Download ── */
+        function downloadWebsite() {
+            if (!state.code) return;
+            var blob = new Blob([state.code], { type: 'text/html' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = 'website.html';
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Website downloaded!');
+        }
+
+        /* ── Copy ── */
+        function copyCode() {
+            if (!state.code) return;
+            navigator.clipboard.writeText(state.code).then(function() {
+                showToast('Code copied to clipboard!');
+            }).catch(function() {
+                showToast('Failed to copy code', 'error');
+            });
+        }
+
+        /* ── Start New ── */
+        function startNew() {
+            state.code = ''; state.raw = ''; state.generated = false;
+            state.versions = []; state.lastPrompt = ''; state.view = 'preview';
+            state.editing = false;
+            $('promptInput').value = '';
+            $('promptInput').placeholder = 'Describe your website...';
+            $('genBtnText').textContent = 'Generate';
+            $('genBtnIcon').className = 'fas fa-bolt';
+            $('downloadBtn').style.display = 'none';
+            $('welcomeSection').style.display = 'block';
+            $('historySection').style.display = 'none';
+            $('codeScroll').style.display = 'block';
+            $('codeEditor').style.display = 'none';
+            $('codeBar').classList.remove('visible');
+            updateUndoBtn();
+            setView('preview');
+            showAppState('empty');
+        }
+
+        /* ── Register Poe Handler ── */
+        function registerPoeHandler() {
+            if (typeof window.Poe === 'undefined' || typeof window.Poe.registerHandler !== 'function') return;
+
+            window.Poe.registerHandler('website-gen', function(result) {
+                var msg = result.responses[0];
+                if (!msg) return;
+
+                if (msg.status === 'error') {
+                    state.generating = false;
+                    $('errorMsg').textContent = msg.statusText || 'Failed to generate. Please try again.';
+                    showAppState('error');
+                    $('genBtn').disabled = false;
+                    $('genBtnText').textContent = state.generated ? 'Refine' : 'Generate';
+                    $('genBtnIcon').className = 'fas fa-bolt';
+                    return;
+                }
+
+                state.raw = msg.content;
+                var chars = msg.content.length;
+                $('loadingStatus').textContent = 'Writing code... (' + chars.toLocaleString() + ' chars)';
+
+                // Live streaming in code view
+                if (state.view === 'code' && state.generating) {
+                    $('codeContent').textContent = msg.content;
+                    var scrollEl = $('codeScroll');
+                    scrollEl.scrollTop = scrollEl.scrollHeight;
+                }
+
+                if (msg.status === 'complete') {
+                    state.generating = false;
+
+                    // Save previous version if refining
+                    if (state.generated && state.code) {
+                        state.versions.push({ code: state.code, prompt: state.lastPrompt });
+                    }
+
+                    state.code = extractHTML(msg.content);
+                    state.generated = true;
+
+                    renderPreview(state.code);
+                    highlightCode(state.code);
+
+                    setView('preview');
+                    showAppState('result');
+
+                    $('genBtn').disabled = false;
+                    $('genBtnText').textContent = 'Refine';
+                    $('genBtnIcon').className = 'fas fa-wand-magic-sparkles';
+                    $('promptInput').value = '';
+                    $('promptInput').placeholder = 'Describe changes to make...';
+                    $('downloadBtn').style.display = 'inline-flex';
+
+                    $('welcomeSection').style.display = 'none';
+                    $('historySection').style.display = 'block';
+                    renderHistory();
+                    updateUndoBtn();
+
+                    showToast('Website generated!');
+
+                    if (window.innerWidth <= 768) { switchMobileTab('preview'); }
+                }
+            });
+        }
+
+        /* ── Generate / Refine ── */
+        function handleGenerate() {
+            var prompt = $('promptInput').value.trim();
+            if (!prompt || state.generating) return;
+
+            if (!window.Poe || !window.Poe.sendUserMessage) {
+                $('errorMsg').textContent = 'This app requires the Poe platform to function.';
+                showAppState('error');
+                return;
+            }
+
+            state.generating = true;
+            state.lastPrompt = prompt;
+            state.raw = '';
+            if (state.editing) { exitEditMode(false); }
+
+            $('genBtn').disabled = true;
+            $('genBtnText').textContent = 'Generating...';
+            $('genBtnIcon').className = 'fas fa-spinner fa-spin';
+            $('loadingStatus').textContent = 'Starting generation...';
+            showAppState('loading');
+
+            var isRefine = state.generated && state.code;
+            var message;
+
+            if (isRefine) {
+                message = 'You are a world-class frontend developer. Modify the HTML website below based on the requested changes.\n\n' +
+                    'CRITICAL RULES:\n' +
+                    '- Output ONLY the complete modified HTML code, starting with <!DOCTYPE html>\n' +
+                    '- Do NOT include markdown code blocks, explanations, or commentary\n' +
+                    '- Preserve the overall structure and style unless specifically asked to change it\n\n' +
+                    'CURRENT WEBSITE CODE:\n' + state.code + '\n\n' +
+                    'REQUESTED CHANGES:\n' + prompt;
+            } else {
+                message = 'You are a world-class frontend developer and designer. Create a stunning, production-ready, single-file HTML website.\n\n' +
+                    'CRITICAL RULES:\n' +
+                    '- Output ONLY the raw HTML code, starting with <!DOCTYPE html>\n' +
+                    '- Do NOT include markdown code blocks, explanations, or commentary\n' +
+                    '- All CSS must be in <style> tags, all JS in <script> tags\n' +
+                    '- Fully responsive and mobile-friendly\n' +
+                    '- Modern, visually stunning design with beautiful typography\n' +
+                    '- Use Google Fonts from https://fonts.googleapis.com\n' +
+                    '- Include realistic placeholder content\n' +
+                    '- Smooth animations and transitions\n' +
+                    '- Semantic HTML5 structure\n\n' +
+                    'DESCRIPTION:\n' + prompt;
+            }
+
+            window.Poe.sendUserMessage('@Claude-Sonnet-4.5 ' + message, {
+                handler: 'website-gen',
+                stream: true,
+                openChat: false,
+                parameters: {}
+            }).catch(function(err) {
+                state.generating = false;
+                if (err.errorType === 'USER_REJECTED_CONFIRMATION') {
+                    showAppState(state.generated ? 'result' : 'empty');
+                } else {
+                    $('errorMsg').textContent = err.message || 'Failed to send message. Please try again.';
+                    showAppState('error');
+                }
+                $('genBtn').disabled = false;
+                $('genBtnText').textContent = state.generated ? 'Refine' : 'Generate';
+                $('genBtnIcon').className = state.generated ? 'fas fa-wand-magic-sparkles' : 'fas fa-bolt';
+            });
+        }
+
+        /* ── Event Listeners ── */
+        function setup() {
+            $('genBtn').addEventListener('click', handleGenerate);
+
+            $('promptInput').addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    handleGenerate();
+                }
+            });
+
+            $('downloadBtn').addEventListener('click', downloadWebsite);
+            $('copyBtn').addEventListener('click', copyCode);
+            $('newBtn').addEventListener('click', startNew);
+            $('undoBtn').addEventListener('click', undoVersion);
+            $('fullscreenBtn').addEventListener('click', toggleFullscreen);
+
+            $('editBtn').addEventListener('click', function() {
+                if (state.editing) { exitEditMode(false); }
+                else { enterEditMode(); }
+            });
+
+            $('applyBtn').addEventListener('click', function() { exitEditMode(true); });
+
+            $('codeEditor').addEventListener('input', updateEditInfo);
+
+            $('retryBtn').addEventListener('click', function() {
+                if (state.lastPrompt) {
+                    $('promptInput').value = state.lastPrompt;
+                    handleGenerate();
+                }
+            });
+
+            $('viewToggle').addEventListener('click', function(e) {
+                var btn = e.target.closest('.vt-btn');
+                if (btn && btn.dataset.view) { setView(btn.dataset.view); }
+            });
+
+            $('deviceToggle').addEventListener('click', function(e) {
+                var btn = e.target.closest('.dt-btn');
+                if (btn && btn.dataset.device) { setDevice(btn.dataset.device); }
+            });
+
+            $('mobileTabs').addEventListener('click', function(e) {
+                var btn = e.target.closest('.m-tab');
+                if (btn && btn.dataset.tab) { switchMobileTab(btn.dataset.tab); }
+            });
+
+            // Watch code being written link
+            $('viewCodeHint').addEventListener('click', function() {
+                setView('code');
+            });
+
+            // Clickable history items to restore version
+            $('historyList').addEventListener('click', function(e) {
+                var item = e.target.closest('.history-item');
+                if (!item || state.generating) return;
+                var idx = parseInt(item.dataset.ver, 10);
+                var all = state.versions.concat([{ code: state.code, prompt: state.lastPrompt }]);
+                if (idx === all.length - 1) return; // already active
+                restoreVersion(idx);
+            });
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    $('createPanel').classList.remove('hidden');
+                    $('previewPanel').classList.remove('hidden');
+                } else {
+                    switchMobileTab(state.mobileTab);
+                }
+            });
+        }
+
+        /* ── Init ── */
+        function init() {
+            detectDarkMode();
+            renderTemplates();
+            setup();
+            registerPoeHandler();
+            showAppState('empty');
+        }
+
+        init();
+    })();
+    </script>
+</body>
+</html>
